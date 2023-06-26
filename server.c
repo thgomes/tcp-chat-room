@@ -7,7 +7,7 @@ typedef struct
 {
     int id;
     char name[MAX_CLIENT_CHAR_NAME];
-    struct sockaddr_in addr
+    struct sockaddr_in addr;
 } Client;
 
 typedef struct
