@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
-typedef struct {
+typedef struct
+{
+
     struct sockaddr_in addr;
 } Server;
 
-int main () {
+int main()
+{
     printf("Hello world!\n");
 }
