@@ -15,13 +15,14 @@ typedef struct
 {
     struct sockaddr_in addr;
 } Server;
-typedef struct 
+typedef struct
 {
     int id;
     char name[MAX_ROOM_CHAR_NAME];
     Client clients_on[MAX_CLIENTS_ON];
 } Room;
 
-int main () {
+int main()
+{
     printf("Hello world!\n");
 }
