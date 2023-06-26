@@ -3,16 +3,19 @@
 
 #define MAX_CLIENT_NAME 50
 
-typedef struct {
+typedef struct
+{
     int id;
     char name[MAX_CLIENT_NAME];
     struct sockaddr_in addr;
 } Client;
 
-typedef struct {
+typedef struct
+{
     struct sockaddr_in addr;
 } Server;
 
-int main () {
+int main()
+{
     printf("Hello world!\n");
 }
