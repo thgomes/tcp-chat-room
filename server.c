@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <netinet/in.h>
 
-#define MAX_CLIENT_NAME 50
+#define MAX_CLIENT_CHAR_NAME 50
 
 typedef struct
 {
     int id;
-    char name[MAX_CLIENT_NAME];
-    struct sockaddr_in addr;
+    char name[MAX_CLIENT_CHAR_NAME];
+    struct sockaddr_in addr
 } Client;
 
 typedef struct
