@@ -93,7 +93,7 @@ void send_message(int sockfd, const char *message)
 {
     send(sockfd, message, strlen(message), 0);
     printf("\n");
-    printf("Enviando mensagem para o socket %d:\n", sockfd);
+    printf("Enviando mensagem para o socket %d\n", sockfd);
     printf("Mensagem: %s\n", message);
 }
 int find_available_room()
@@ -125,21 +125,26 @@ void handle_new_connection()
         send_message(newsockfd, "Desculpe, todas as salas estão cheias.\n");
         close(newsockfd);
     }
-
-    rooms[room].clients[rooms[room].clients_count].addr = client_addr;
-    FD_SET(newsockfd, &master_fds);
-    char welcome_message[BUFFER_SIZE];
-    snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
-    send_message(newsockfd, welcome_message);
-    rooms[room].clients_count++;
-    // Imprimir informações do cliente conectado
-    printf("\n");
-    printf("Cliente conectado:\n");
-    printf("- Endereço IP: %s\n", inet_ntoa(client_addr.sin_addr));
-    printf("- Porta: %d\n", ntohs(client_addr.sin_port));
+    else
+    {
+        rooms[room].clients[rooms[room].clients_count].addr = client_addr;
+        FD_SET(newsockfd, &master_fds);
+        char welcome_message[BUFFER_SIZE];
+        snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
+        send_message(newsockfd, welcome_message);
+        rooms[room].clients_count++;
+        // Imprimir informações do cliente conectado
+        printf("\n");
+        printf("Cliente conectado:\n");
+        printf("- Endereço IP: %s\n", inet_ntoa(client_addr.sin_addr));
+        printf("- Porta: %d\n", ntohs(client_addr.sin_port));
+    }
 }
 void send_message_to_room(int room, const char *message)
 {
+    printf("\n");
+    printf("Enviando mensagem para %s\n", rooms[room].name);
+    printf("Mensagem: %s\n", message);
     for (int client = 0; client < rooms[room].clients_count; client++)
     {
         int client_sockfd = rooms[room].clients[client].addr.sin_family;
@@ -174,11 +179,22 @@ void handle_client_message(int client_sockfd)
             {
                 if (rooms[room].clients[client].addr.sin_family == client_sockfd)
                 {
+                    // Guarda o endereço do cliente a ser removido
+                    struct sockaddr_in client_address = rooms[room].clients[client].addr;
+                    char client_ip[INET_ADDRSTRLEN];
+                    inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+                    int client_port = ntohs(client_address.sin_port);
+
+                    // Remove o cliente da lista de clientes da sala
                     memmove(
                         &rooms[room].clients[client],
                         &rooms[room].clients[client + 1],
                         (rooms[room].clients_count - client - 1) * sizeof(Client));
                     rooms[room].clients_count--;
+
+                    // Imprime o log informando as informações do endereço do cliente removido
+                    printf("\n");
+                    printf("Cliente removido: IP: %s, Porta: %d\n", client_ip, client_port);
                     break;
                 }
             }
