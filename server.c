@@ -106,6 +106,20 @@ void handle_new_connection()
         rooms[room].clients_count++;
     }
 }
+void handle_stdin_input()
+{
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, sizeof(buffer));
+    if (read(STDIN, buffer, sizeof(buffer)) <= 0)
+    {
+        perror("Erro na leitura da entrada padrão");
+        exit(1);
+    }
+    for (int room = 0; room < MAX_ROOMS; room++)
+    {
+        send_message_to_room(room, buffer);
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -140,6 +154,10 @@ int main(int argc, char *argv[])
                 if (i == sockfd)
                 {
                     handle_new_connection();
+                }
+                else if (i == STDIN)
+                {
+                    handle_stdin_input();
                 }
             }
         }
