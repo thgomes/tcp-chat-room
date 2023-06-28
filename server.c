@@ -8,6 +8,7 @@
 #define MAX_CLIENTS_PER_ROOM 10
 #define MAX_ROOMS 5
 #define STDIN 0
+#define BUFFER_SIZE 256
 
 typedef struct
 {
@@ -77,6 +78,34 @@ int create_socket(const char *ip, int port)
 
     return sockfd;
 }
+void handle_new_connection()
+{
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int newsockfd = accept(sockfd, (struct sockaddr *)&client_addr, &client_len);
+
+    if (newsockfd < 0)
+    {
+        perror("Erro ao aceitar a conexão");
+        exit(1);
+    }
+
+    int room = find_available_room();
+    if (room < 0)
+    {
+        send_message(newsockfd, "Desculpe, todas as salas estão cheias.");
+        close(newsockfd);
+    }
+    else
+    {
+        rooms[room].clients[rooms[room].clients_count].addr = client_addr;
+        FD_SET(newsockfd, &master_fds);
+        char welcome_message[BUFFER_SIZE];
+        snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
+        send_message(newsockfd, welcome_message);
+        rooms[room].clients_count++;
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -89,6 +118,32 @@ int main(int argc, char *argv[])
     initialize_rooms();
 
     sockfd = create_socket(argv[1], atoi(argv[2]));
+
+    FD_SET(sockfd, &master_fds);
+    FD_SET(STDIN, &master_fds);
+    int fdmax = sockfd;
+
+    while (1)
+    {
+        fd_set read_fds = master_fds;
+
+        if (select(fdmax + 1, &read_fds, NULL, NULL, NULL) < 0)
+        {
+            perror("Erro no select");
+            exit(1);
+        }
+
+        for (int i = 0; i <= fdmax; i++)
+        {
+            if (FD_ISSET(i, &read_fds))
+            {
+                if (i == sockfd)
+                {
+                    handle_new_connection();
+                }
+            }
+        }
+    }
 
     FD_ZERO(&master_fds);
 }
