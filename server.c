@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/types.h>
 
 #define MAX_CLIENT_CHAR_NAME 50
 #define MAX_ROOM_CHAR_NAME 50
@@ -25,6 +27,8 @@ typedef struct
 } Room;
 
 Room rooms[MAX_ROOMS];
+int sockfd;
+fd_set master_fds;
 
 void initialize_rooms()
 {
@@ -46,4 +50,22 @@ int main(int argc, char *argv[])
     }
 
     initialize_rooms();
+
+    FD_ZERO(&master_fds);
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
+    {
+        perror("Erro ao abrir o socket");
+        exit(1);
+    }
+
+    int opt = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0)
+    {
+        perror("Erro ao definir as opções do socket");
+        exit(1);
+    }
+
+    FD_ZERO(&master_fds);
 }
