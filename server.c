@@ -2,6 +2,12 @@
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #define MAX_CLIENT_CHAR_NAME 50
 #define MAX_ROOM_CHAR_NAME 50
@@ -120,6 +126,47 @@ void handle_stdin_input()
         send_message_to_room(room, buffer);
     }
 }
+void handle_client_message(int client_sockfd)
+{
+    char buffer[BUFFER_SIZE];
+    memset(buffer, 0, sizeof(buffer));
+    int bytes_received = recv(client_sockfd, buffer, sizeof(buffer), 0);
+
+    if (bytes_received <= 0)
+    {
+        for (int room = 0; room < MAX_ROOMS; room++)
+        {
+            for (int client = 0; client < rooms[room].clients_count; client++)
+            {
+                if (rooms[room].clients[client].addr.sin_family == client_sockfd)
+                {
+                    memmove(
+                        &rooms[room].clients[client],
+                        &rooms[room].clients[client + 1],
+                        (rooms[room].clients_count - client - 1) * sizeof(Client));
+                    rooms[room].clients_count--;
+                    break;
+                }
+            }
+        }
+        FD_CLR(client_sockfd, &master_fds);
+        close(client_sockfd);
+    }
+    else
+    {
+        for (int room = 0; room < MAX_ROOMS; room++)
+        {
+            for (int client = 0; client < rooms[room].clients_count; client++)
+            {
+                if (rooms[room].clients[client].addr.sin_family == client_sockfd)
+                {
+                    send_message_to_room(room, buffer);
+                    break;
+                }
+            }
+        }
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -158,6 +205,10 @@ int main(int argc, char *argv[])
                 else if (i == STDIN)
                 {
                     handle_stdin_input();
+                }
+                else
+                {
+                    handle_client_message(i);
                 }
             }
         }
