@@ -96,6 +96,17 @@ void send_message()
         }
     }
 }
+int find_available_room()
+{
+    for (int room = 0; room < MAX_ROOMS; room++)
+    {
+        if (rooms[room].clients_count < MAX_CLIENTS_PER_ROOM)
+        {
+            return room;
+        }
+    }
+    return -1;
+}
 void handle_new_connection()
 {
     struct sockaddr_in client_addr;
