@@ -7,6 +7,7 @@
 #define MAX_ROOM_CHAR_NAME 50
 #define MAX_CLIENTS_PER_ROOM 10
 #define MAX_ROOMS 5
+#define STDIN 0
 
 typedef struct
 {
@@ -40,20 +41,9 @@ void initialize_rooms()
         snprintf(rooms[room].name, sizeof(rooms[room].name), "Sala %d", room_id);
     }
 }
-
-int main(int argc, char *argv[])
+int create_socket(const char *ip, int port)
 {
-    if (argc < 3)
-    {
-        printf("Digite o IP e a porta para este servidor.\n");
-        exit(1);
-    }
-
-    initialize_rooms();
-
-    FD_ZERO(&master_fds);
-
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
         perror("Erro ao abrir o socket");
@@ -66,6 +56,39 @@ int main(int argc, char *argv[])
         perror("Erro ao definir as opções do socket");
         exit(1);
     }
+
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(ip);
+    server_addr.sin_port = htons(port);
+    memset(&(server_addr.sin_zero), '\0', 8);
+
+    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
+        perror("Erro ao fazer o bind");
+        exit(1);
+    }
+
+    if (listen(sockfd, 10) < 0)
+    {
+        perror("Erro ao ouvir a porta");
+        exit(1);
+    }
+
+    return sockfd;
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        printf("Digite o IP e a porta para este servidor.\n");
+        exit(1);
+    }
+
+    initialize_rooms();
+
+    sockfd = create_socket(argv[1], atoi(argv[2]));
 
     FD_ZERO(&master_fds);
 }
