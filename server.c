@@ -137,14 +137,12 @@ void handle_new_connection()
 }
 void send_message_to_room(int room, const char *message)
 {
-    int client;
-    for (client = 0; client < rooms[room].count; client++)
+    for (int client = 0; client < rooms[room].clients_count; client++)
     {
-        int client_sockfd = rooms[room].clients[client];
-        send(client_sockfd, message, strlen(message), 0);
+        int client_sockfd = rooms[room].clients[client].addr.sin_family;
+        send_message(client_sockfd, message);
     }
 }
-
 void handle_stdin_input()
 {
     char buffer[BUFFER_SIZE];
