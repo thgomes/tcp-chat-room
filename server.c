@@ -178,6 +178,55 @@ void handle_stdin_input()
         send_message_to_room(room, buffer, -1);
     }
 }
+
+void handle_client_command(Room *rooms, int client_sockfd, char *command)
+{
+    printf("Un11111d.\n");
+
+    char *commands[] = {"$set_name"};
+
+    printf("Un22222and. %s  \n", command);
+
+    if (strncmp(command, commands[0], strlen(commands[0])) == 0)
+    {
+
+        char *prefixPosition = strstr(command, &commands[0][1]);
+
+        char *name = prefixPosition + strlen(commands[0]);
+
+        size_t length = strlen(name);
+
+        if (length >= 2)
+        {
+            size_t penultimateIndex = length - 2;
+            name[penultimateIndex] = '\0';
+        }
+
+        for (int room = 0; room < MAX_ROOMS; room++)
+        {
+            for (int client = 0; client < rooms[room].clients_count; client++)
+            {
+                if (rooms[room].clients[client].client_sockfd == client_sockfd)
+                {
+
+                    printf("Un22222and. %s %s\n", rooms[room].clients[client].name, name);
+
+                    strcpy(rooms[room].clients[client].name, name);
+                    printf("3333.\n");
+
+                    break;
+                }
+            }
+        }
+
+        printf("Hello!\n");
+    }
+    else
+    {
+        printf("Unknown command.\n");
+    }
+}
+
 void remove_client(int room, int client)
 {
     struct sockaddr_in client_address = rooms[room].clients[client].addr;
@@ -224,6 +273,12 @@ void handle_client_message(int client_sockfd)
         printf("/n");
         printf("Cliente (socket %d): %s\n", client_sockfd, buffer);
 
+        if (buffer[0] == '$')
+        {
+            handle_client_command(rooms, client_sockfd, buffer);
+            return;
+        }
+
         for (int room = 0; room < MAX_ROOMS; room++)
         {
             for (int client = 0; client < rooms[room].clients_count; client++)
@@ -239,6 +294,7 @@ void handle_client_message(int client_sockfd)
         }
     }
 }
+
 int main(int argc, char *argv[])
 {
     if (argc < 3)
