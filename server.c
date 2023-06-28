@@ -128,7 +128,9 @@ void handle_new_connection()
     else
     {
         rooms[room].clients[rooms[room].clients_count].addr = client_addr;
-        rooms[room].clients[rooms[room].clients_count].client_sockfd = newsockfd; // Atribuição do client_sockfd
+        rooms[room].clients[rooms[room].clients_count].client_sockfd = newsockfd;                                                                                            // Atribuição do client_sockfd
+        snprintf(rooms[room].clients[rooms[room].clients_count].name, sizeof(rooms[room].clients[rooms[room].clients_count].name), "Cliente %d", rooms[room].clients_count); // Atribuição do client_sockfd
+
         FD_SET(newsockfd, &master_fds);
         char welcome_message[BUFFER_SIZE];
         snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
