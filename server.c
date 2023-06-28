@@ -21,6 +21,7 @@ typedef struct
     int id;
     char name[MAX_CLIENT_CHAR_NAME];
     struct sockaddr_in addr;
+    int client_sockfd; // Novo campo adicionado
 } Client;
 typedef struct
 {
@@ -128,6 +129,7 @@ void handle_new_connection()
     else
     {
         rooms[room].clients[rooms[room].clients_count].addr = client_addr;
+        rooms[room].clients[rooms[room].clients_count].client_sockfd = newsockfd; // Atribuição do client_sockfd
         FD_SET(newsockfd, &master_fds);
         char welcome_message[BUFFER_SIZE];
         snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
@@ -147,7 +149,7 @@ void send_message_to_room(int room, const char *message)
     printf("Mensagem: %s\n", message);
     for (int client = 0; client < rooms[room].clients_count; client++)
     {
-        int client_sockfd = rooms[room].clients[client].addr.sin_family;
+        int client_sockfd = rooms[room].clients[client].client_sockfd; // Acesso ao client_sockfd
         send_message(client_sockfd, message);
     }
 }
@@ -195,7 +197,7 @@ void handle_client_message(int client_sockfd)
         {
             for (int client = 0; client < rooms[room].clients_count; client++)
             {
-                if (rooms[room].clients[client].addr.sin_family == client_sockfd)
+                if (rooms[room].clients[client].client_sockfd == client_sockfd) // Comparação usando client_sockfd
                 {
                     remove_client(room, client);
                     break;
@@ -211,16 +213,17 @@ void handle_client_message(int client_sockfd)
         {
             for (int client = 0; client < rooms[room].clients_count; client++)
             {
-                if (rooms[room].clients[client].addr.sin_family == client_sockfd)
+                if (rooms[room].clients[client].client_sockfd == client_sockfd) // Comparação usando client_sockfd
                 {
-                    send_message_to_room(room, buffer);
+                    char message[BUFFER_SIZE];
+                    snprintf(message, BUFFER_SIZE, "[%s]: %s", rooms[room].clients[client].name, buffer);
+                    send_message_to_room(room, message);
                     break;
                 }
             }
         }
     }
 }
-
 int main(int argc, char *argv[])
 {
     if (argc < 3)
@@ -229,41 +232,40 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    sockfd = create_socket(argv[1], atoi(argv[2]));
+
     initialize_rooms();
 
     FD_ZERO(&master_fds);
-
-    sockfd = create_socket(argv[1], atoi(argv[2]));
-
     FD_SET(sockfd, &master_fds);
     FD_SET(STDIN, &master_fds);
-    int fdmax = sockfd;
+
+    int max_fd = sockfd;
 
     while (1)
     {
         fd_set read_fds = master_fds;
-
-        if (select(fdmax + 1, &read_fds, NULL, NULL, NULL) < 0)
+        if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) < 0)
         {
             perror("Erro no select\n");
             exit(1);
         }
 
-        for (int i = 0; i <= fdmax; i++)
+        for (int fd = 0; fd <= max_fd; fd++)
         {
-            if (FD_ISSET(i, &read_fds))
+            if (FD_ISSET(fd, &read_fds))
             {
-                if (i == sockfd)
+                if (fd == sockfd)
                 {
                     handle_new_connection();
                 }
-                else if (i == STDIN)
+                else if (fd == STDIN)
                 {
                     handle_stdin_input();
                 }
                 else
                 {
-                    handle_client_message(i);
+                    handle_client_message(fd);
                 }
             }
         }
