@@ -3,7 +3,8 @@
 
 #define MAX_CLIENT_CHAR_NAME 50
 #define MAX_ROOM_CHAR_NAME 50
-#define MAX_CLIENTS_ON 25
+#define MAX_CLIENTS_PER_ROOM 10
+#define MAX_ROOMS 5
 
 typedef struct
 {
@@ -19,15 +20,30 @@ typedef struct
 {
     int id;
     char name[MAX_ROOM_CHAR_NAME];
-    Client clients_on[MAX_CLIENTS_ON];
+    Client clients[MAX_CLIENTS_PER_ROOM];
+    int clients_count;
 } Room;
 
-char *commands[] = {
-    "$list",
-    "$quit",
-};
+Room rooms[MAX_ROOMS];
 
-int main()
+void initialize_rooms()
 {
-    printf("Hello world!\n");
+    for (int room = 0; room < MAX_ROOMS; room++)
+    {
+        int room_id = room + 1;
+        rooms[room].id = room_id;
+        rooms[room].clients_count = 0;
+        snprintf(rooms[room].name, sizeof(rooms[room].name), "Sala %d", room_id);
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
+        printf("Digite o IP e a porta para este servidor.\n");
+        exit(1);
+    }
+
+    initialize_rooms();
 }
