@@ -55,14 +55,14 @@ int create_socket(const char *ip, int port)
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
-        perror("Erro ao abrir o socket");
+        perror("Erro ao abrir o socket\n");
         exit(1);
     }
 
     int opt = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0)
     {
-        perror("Erro ao definir as opções do socket");
+        perror("Erro ao definir as opções do socket\n");
         exit(1);
     }
 
@@ -74,27 +74,27 @@ int create_socket(const char *ip, int port)
 
     if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
-        perror("Erro ao fazer o bind");
+        perror("Erro ao fazer o bind\n");
         exit(1);
     }
 
     if (listen(sockfd, 10) < 0)
     {
-        perror("Erro ao ouvir a porta");
+        perror("Erro ao ouvir a porta\n");
         exit(1);
     }
 
+    printf("\n");
+    printf("Socket %d criado com sucesso\n", sockfd);
+
     return sockfd;
 }
-void send_message()
+void send_message(int sockfd, const char *message)
 {
-    for (int j = 0; j <= sockfd; j++)
-    {
-        if (FD_ISSET(j, &master_fds) && j != sockfd && j != STDIN)
-        {
-            send(j, buffer, bytes_received, 0);
-        }
-    }
+    send(sockfd, message, strlen(message), 0);
+    printf("\n");
+    printf("Enviando mensagem para o socket %d:\n", sockfd);
+    printf("Mensagem: %s\n", message);
 }
 int find_available_room()
 {
@@ -115,25 +115,28 @@ void handle_new_connection()
 
     if (newsockfd < 0)
     {
-        perror("Erro ao aceitar a conexão");
+        perror("Erro ao aceitar a conexão\n");
         exit(1);
     }
 
     int room = find_available_room();
     if (room < 0)
     {
-        send_message(newsockfd, "Desculpe, todas as salas estão cheias.");
+        send_message(newsockfd, "Desculpe, todas as salas estão cheias.\n");
         close(newsockfd);
     }
-    else
-    {
-        rooms[room].clients[rooms[room].clients_count].addr = client_addr;
-        FD_SET(newsockfd, &master_fds);
-        char welcome_message[BUFFER_SIZE];
-        snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
-        send_message(newsockfd, welcome_message);
-        rooms[room].clients_count++;
-    }
+
+    rooms[room].clients[rooms[room].clients_count].addr = client_addr;
+    FD_SET(newsockfd, &master_fds);
+    char welcome_message[BUFFER_SIZE];
+    snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
+    send_message(newsockfd, welcome_message);
+    rooms[room].clients_count++;
+    // Imprimir informações do cliente conectado
+    printf("\n");
+    printf("Cliente conectado:\n");
+    printf("- Endereço IP: %s\n", inet_ntoa(client_addr.sin_addr));
+    printf("- Porta: %d\n", ntohs(client_addr.sin_port));
 }
 void send_message_to_room(int room, const char *message)
 {
@@ -149,7 +152,7 @@ void handle_stdin_input()
     memset(buffer, 0, sizeof(buffer));
     if (read(STDIN, buffer, sizeof(buffer)) <= 0)
     {
-        perror("Erro na leitura da entrada padrão");
+        perror("Erro na leitura da entrada padrão\n");
         exit(1);
     }
     for (int room = 0; room < MAX_ROOMS; room++)
@@ -223,7 +226,7 @@ int main(int argc, char *argv[])
 
         if (select(fdmax + 1, &read_fds, NULL, NULL, NULL) < 0)
         {
-            perror("Erro no select");
+            perror("Erro no select\n");
             exit(1);
         }
 
