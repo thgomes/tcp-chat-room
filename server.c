@@ -36,8 +36,7 @@ typedef struct
 } Room;
 
 Room rooms[MAX_ROOMS];
-int sockfd;
-int sockfd, newsockfd, bytes_received, opt = 1;
+int sockfd, max_fd, newsockfd, bytes_received, opt = 1;
 fd_set master_fds;
 char buffer[BUFFER_SIZE];
 
@@ -135,6 +134,12 @@ void handle_new_connection()
         snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
         send_message(newsockfd, welcome_message);
         rooms[room].clients_count++;
+
+        if (newsockfd > max_fd)
+        {
+            max_fd = newsockfd;
+        }
+
         // Imprimir informações do cliente conectado
         printf("\n");
         printf("Cliente conectado:\n");
@@ -209,11 +214,15 @@ void handle_client_message(int client_sockfd)
     }
     else
     {
+        buffer[bytes_received] = '\0'; // Adicione isso para garantir que a string seja terminada corretamente
+        printf("/n");
+        printf("Cliente (socket %d): %s\n", client_sockfd, buffer);
+
         for (int room = 0; room < MAX_ROOMS; room++)
         {
             for (int client = 0; client < rooms[room].clients_count; client++)
             {
-                if (rooms[room].clients[client].client_sockfd == client_sockfd) // Comparação usando client_sockfd
+                if (rooms[room].clients[client].client_sockfd == client_sockfd)
                 {
                     char message[BUFFER_SIZE];
                     snprintf(message, BUFFER_SIZE, "[%s]: %s", rooms[room].clients[client].name, buffer);
@@ -240,7 +249,7 @@ int main(int argc, char *argv[])
     FD_SET(sockfd, &master_fds);
     FD_SET(STDIN, &master_fds);
 
-    int max_fd = sockfd;
+    max_fd = sockfd;
 
     while (1)
     {
