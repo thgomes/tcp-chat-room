@@ -178,6 +178,8 @@ int main(int argc, char *argv[])
 
     initialize_rooms();
 
+    FD_ZERO(&master_fds);
+
     sockfd = create_socket(argv[1], atoi(argv[2]));
 
     FD_SET(sockfd, &master_fds);
@@ -214,5 +216,5 @@ int main(int argc, char *argv[])
         }
     }
 
-    FD_ZERO(&master_fds);
+    return 0;
 }
