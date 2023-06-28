@@ -147,7 +147,7 @@ void handle_new_connection()
         printf("- Porta: %d\n", ntohs(client_addr.sin_port));
     }
 }
-void send_message_to_room(int room, const char *message)
+void send_message_to_room(int room, const char *message, int this_client)
 {
     printf("\n");
     printf("Enviando mensagem para %s\n", rooms[room].name);
@@ -155,7 +155,11 @@ void send_message_to_room(int room, const char *message)
     for (int client = 0; client < rooms[room].clients_count; client++)
     {
         int client_sockfd = rooms[room].clients[client].client_sockfd; // Acesso ao client_sockfd
-        send_message(client_sockfd, message);
+
+        if (client_sockfd != this_client)
+        {
+            send_message(client_sockfd, message);
+        }
     }
 }
 void handle_stdin_input()
@@ -169,7 +173,7 @@ void handle_stdin_input()
     }
     for (int room = 0; room < MAX_ROOMS; room++)
     {
-        send_message_to_room(room, buffer);
+        send_message_to_room(room, buffer, -1);
     }
 }
 void remove_client(int room, int client)
@@ -226,7 +230,7 @@ void handle_client_message(int client_sockfd)
                 {
                     char message[BUFFER_SIZE];
                     snprintf(message, BUFFER_SIZE, "[%s]: %s", rooms[room].clients[client].name, buffer);
-                    send_message_to_room(room, message);
+                    send_message_to_room(room, message, client_sockfd);
                     break;
                 }
             }
