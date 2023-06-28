@@ -135,6 +135,16 @@ void handle_new_connection()
         rooms[room].clients_count++;
     }
 }
+void send_message_to_room(int room, const char *message)
+{
+    int client;
+    for (client = 0; client < rooms[room].count; client++)
+    {
+        int client_sockfd = rooms[room].clients[client];
+        send(client_sockfd, message, strlen(message), 0);
+    }
+}
+
 void handle_stdin_input()
 {
     char buffer[BUFFER_SIZE];
