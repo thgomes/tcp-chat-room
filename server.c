@@ -36,7 +36,9 @@ typedef struct
 
 Room rooms[MAX_ROOMS];
 int sockfd;
+int sockfd, newsockfd, bytes_received, opt = 1;
 fd_set master_fds;
+char buffer[BUFFER_SIZE];
 
 void initialize_rooms()
 {
@@ -83,6 +85,16 @@ int create_socket(const char *ip, int port)
     }
 
     return sockfd;
+}
+void send_message()
+{
+    for (int j = 0; j <= sockfd; j++)
+    {
+        if (FD_ISSET(j, &master_fds) && j != sockfd && j != STDIN)
+        {
+            send(j, buffer, bytes_received, 0);
+        }
+    }
 }
 void handle_new_connection()
 {
