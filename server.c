@@ -165,6 +165,24 @@ void handle_stdin_input()
         send_message_to_room(room, buffer);
     }
 }
+void remove_client(int room, int client)
+{
+    struct sockaddr_in client_address = rooms[room].clients[client].addr;
+    char client_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+    int client_port = ntohs(client_address.sin_port);
+
+    // Remove o cliente da lista de clientes da sala
+    memmove(
+        &rooms[room].clients[client],
+        &rooms[room].clients[client + 1],
+        (rooms[room].clients_count - client - 1) * sizeof(Client));
+    rooms[room].clients_count--;
+
+    // Imprime o log informando as informações do endereço do cliente removido
+    printf("\n");
+    printf("Cliente removido: IP: %s, Porta: %d\n", client_ip, client_port);
+}
 void handle_client_message(int client_sockfd)
 {
     char buffer[BUFFER_SIZE];
@@ -179,22 +197,7 @@ void handle_client_message(int client_sockfd)
             {
                 if (rooms[room].clients[client].addr.sin_family == client_sockfd)
                 {
-                    // Guarda o endereço do cliente a ser removido
-                    struct sockaddr_in client_address = rooms[room].clients[client].addr;
-                    char client_ip[INET_ADDRSTRLEN];
-                    inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
-                    int client_port = ntohs(client_address.sin_port);
-
-                    // Remove o cliente da lista de clientes da sala
-                    memmove(
-                        &rooms[room].clients[client],
-                        &rooms[room].clients[client + 1],
-                        (rooms[room].clients_count - client - 1) * sizeof(Client));
-                    rooms[room].clients_count--;
-
-                    // Imprime o log informando as informações do endereço do cliente removido
-                    printf("\n");
-                    printf("Cliente removido: IP: %s, Porta: %d\n", client_ip, client_port);
+                    remove_client(room, client);
                     break;
                 }
             }
