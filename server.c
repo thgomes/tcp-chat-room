@@ -181,15 +181,10 @@ void handle_stdin_input()
 
 void handle_client_command(Room *rooms, int client_sockfd, char *command)
 {
-    printf("Un11111d.\n");
-
     char *commands[] = {"$set_name"};
-
-    printf("Un22222and. %s  \n", command);
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
-
         char *prefixPosition = strstr(command, &commands[0][1]);
 
         char *name = prefixPosition + strlen(commands[0]);
@@ -208,12 +203,7 @@ void handle_client_command(Room *rooms, int client_sockfd, char *command)
             {
                 if (rooms[room].clients[client].client_sockfd == client_sockfd)
                 {
-
-                    printf("Un22222and. %s %s\n", rooms[room].clients[client].name, name);
-
                     strcpy(rooms[room].clients[client].name, name);
-                    printf("3333.\n");
-
                     break;
                 }
             }
