@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <time.h>
 
 #define MAX_CLIENT_CHAR_NAME 50
 #define MAX_ROOM_CHAR_NAME 50
@@ -22,6 +23,7 @@ typedef struct
     char name[MAX_CLIENT_CHAR_NAME];
     struct sockaddr_in addr;
     int client_sockfd; // Novo campo adicionado
+    int current_room;
 } Client;
 typedef struct
 {
@@ -31,11 +33,14 @@ typedef struct
 {
     int id;
     char name[MAX_ROOM_CHAR_NAME];
-    Client clients[MAX_CLIENTS_PER_ROOM];
+    int clients[MAX_CLIENTS_PER_ROOM];
     int clients_count;
 } Room;
 
 Room rooms[MAX_ROOMS];
+Client clients[MAX_ROOMS * MAX_CLIENTS_PER_ROOM];
+int clients_count = 0;
+
 int sockfd, max_fd, newsockfd, bytes_received, opt = 1;
 fd_set master_fds;
 char buffer[BUFFER_SIZE];
@@ -107,6 +112,7 @@ int find_available_room()
     }
     return -1;
 }
+
 void handle_new_connection()
 {
     struct sockaddr_in client_addr;
@@ -119,36 +125,34 @@ void handle_new_connection()
         exit(1);
     }
 
-    int room = find_available_room();
-    if (room < 0)
+    clients_count++;
+    clients[clients_count - 1].addr = client_addr;
+    clients[clients_count - 1].client_sockfd = newsockfd;                                                            // Atribuição do client_sockfd
+    snprintf(clients[clients_count - 1].name, sizeof(clients[clients_count - 1].name), "Cliente %d", clients_count); // Atribuição do client_sockfd
+    printf("\n");
+    printf("Cliente conectado:\n");
+    printf("- Endereço IP: %s\n", inet_ntoa(client_addr.sin_addr));
+    printf("- Porta: %d\n", ntohs(client_addr.sin_port));
+
+    FD_SET(newsockfd, &master_fds);
+
+    if (newsockfd > max_fd)
     {
-        send_message(newsockfd, "Desculpe, todas as salas estão cheias.\n");
-        close(newsockfd);
+        max_fd = newsockfd;
     }
-    else
-    {
-        rooms[room].clients[rooms[room].clients_count].addr = client_addr;
-        rooms[room].clients[rooms[room].clients_count].client_sockfd = newsockfd;                                                                                            // Atribuição do client_sockfd
-        snprintf(rooms[room].clients[rooms[room].clients_count].name, sizeof(rooms[room].clients[rooms[room].clients_count].name), "Cliente %d", rooms[room].clients_count); // Atribuição do client_sockfd
 
-        FD_SET(newsockfd, &master_fds);
-        char welcome_message[BUFFER_SIZE];
-        snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
-        send_message(newsockfd, welcome_message);
-        rooms[room].clients_count++;
-
-        if (newsockfd > max_fd)
-        {
-            max_fd = newsockfd;
-        }
-
-        // Imprimir informações do cliente conectado
-        printf("\n");
-        printf("Cliente conectado:\n");
-        printf("- Endereço IP: %s\n", inet_ntoa(client_addr.sin_addr));
-        printf("- Porta: %d\n", ntohs(client_addr.sin_port));
-    }
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $set_name <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$list para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n");
 }
+
+void join_room(int client_id, int room)
+{
+    rooms[room].clients[rooms[room].clients_count] = client_id;
+
+    char welcome_message[BUFFER_SIZE];
+    snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
+    send_message(newsockfd, welcome_message);
+}
+
 void send_message_to_room(int room, const char *message, int this_client)
 {
     printf("\n");
@@ -156,12 +160,26 @@ void send_message_to_room(int room, const char *message, int this_client)
     printf("Mensagem: %s\n", message);
     for (int client = 0; client < rooms[room].clients_count; client++)
     {
-        int client_sockfd = rooms[room].clients[client].client_sockfd; // Acesso ao client_sockfd
 
-        if (client_sockfd != this_client)
+        for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
         {
-            send_message(client_sockfd, message);
+            if (rooms[room].clients[client] == this_client)
+            {
+                continue;
+            }
+
+            if (clients[idx].client_sockfd == rooms[room].clients[client]) //&&
+            {
+                send_message(clients[idx].client_sockfd, message);
+            }
         }
+
+        // int client_sockfd = clients[rooms[room].clients[client]].client_sockfd; // Acesso ao client_sockfd
+
+        // if (client_sockfd != this_client)
+        // {
+        //     send_message(client_sockfd, message);
+        // }
     }
 }
 void handle_stdin_input()
@@ -179,9 +197,9 @@ void handle_stdin_input()
     }
 }
 
-void handle_client_command(Room *rooms, int client_sockfd, char *command)
+void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$set_name"};
+    char *commands[] = {"$setname", "$join"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -197,19 +215,56 @@ void handle_client_command(Room *rooms, int client_sockfd, char *command)
             name[penultimateIndex] = '\0';
         }
 
-        for (int room = 0; room < MAX_ROOMS; room++)
+        for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
         {
-            for (int client = 0; client < rooms[room].clients_count; client++)
+            if (clients[idx].client_sockfd == client_sockfd)
             {
-                if (rooms[room].clients[client].client_sockfd == client_sockfd)
-                {
-                    strcpy(rooms[room].clients[client].name, name);
-                    break;
-                }
+                strcpy(clients[idx].name, name);
+                break;
             }
         }
 
         printf("Hello!\n");
+    }
+    else if (strncmp(command, commands[1], strlen(commands[1])) == 0)
+    {
+        char *prefixPosition = strstr(command, &commands[1][1]);
+
+        char *name = prefixPosition + strlen(commands[1]);
+
+        size_t length = strlen(name);
+
+        if (length >= 2)
+        {
+            size_t penultimateIndex = length - 2;
+            name[penultimateIndex] = '\0';
+        }
+
+        for (int room = 0; room < MAX_ROOMS; room++)
+        {
+
+            if (strcmp(rooms[room].name, name) == 0)
+            {
+
+                rooms[room].clients[rooms[room].clients_count] = client_sockfd;
+                rooms[room].clients_count++;
+
+                for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
+                {
+                    if (clients[idx].client_sockfd == client_sockfd)
+                    {
+                        clients[idx].current_room = rooms[room].id;
+                        break;
+                    }
+                }
+                char welcome_message[BUFFER_SIZE];
+                snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", name);
+                send_message(newsockfd, welcome_message);
+                printf("Hello!\n");
+
+                break;
+            }
+        }
     }
     else
     {
@@ -219,7 +274,7 @@ void handle_client_command(Room *rooms, int client_sockfd, char *command)
 
 void remove_client(int room, int client)
 {
-    struct sockaddr_in client_address = rooms[room].clients[client].addr;
+    struct sockaddr_in client_address = clients[rooms[room].clients[client]].addr;
     char client_ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
     int client_port = ntohs(client_address.sin_port);
@@ -247,7 +302,7 @@ void handle_client_message(int client_sockfd)
         {
             for (int client = 0; client < rooms[room].clients_count; client++)
             {
-                if (rooms[room].clients[client].client_sockfd == client_sockfd) // Comparação usando client_sockfd
+                if (clients[rooms[room].clients[client]].client_sockfd == client_sockfd) // Comparação usando client_sockfd
                 {
                     remove_client(room, client);
                     break;
@@ -265,20 +320,24 @@ void handle_client_message(int client_sockfd)
 
         if (buffer[0] == '$')
         {
-            handle_client_command(rooms, client_sockfd, buffer);
+            handle_client_command(client_sockfd, buffer);
             return;
         }
 
-        for (int room = 0; room < MAX_ROOMS; room++)
+        for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
         {
-            for (int client = 0; client < rooms[room].clients_count; client++)
+            if (clients[idx].client_sockfd == client_sockfd)
             {
-                if (rooms[room].clients[client].client_sockfd == client_sockfd)
+                for (int room = 0; room < MAX_ROOMS; room++)
                 {
-                    char message[BUFFER_SIZE];
-                    snprintf(message, BUFFER_SIZE, "[%s]: %s", rooms[room].clients[client].name, buffer);
-                    send_message_to_room(room, message, client_sockfd);
-                    break;
+                    if (rooms[room].id = clients[idx].current_room)
+                    {
+
+                        char message[BUFFER_SIZE];
+                        snprintf(message, BUFFER_SIZE, "[%s]: %s", clients[idx].name, buffer);
+                        send_message_to_room(room, message, client_sockfd);
+                        break;
+                    }
                 }
             }
         }
