@@ -107,7 +107,6 @@ int find_available_room()
     }
     return -1;
 }
-
 void handle_new_connection()
 {
     struct sockaddr_in client_addr;
@@ -136,7 +135,7 @@ void handle_new_connection()
         max_fd = newsockfd;
     }
 
-    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n");
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n\n");
 }
 void send_message_to_room(int room, const char *message, int this_client)
 {
@@ -174,10 +173,9 @@ void handle_stdin_input()
         send_message_to_room(room, buffer, -1);
     }
 }
-
 void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$setname", "$join", "$listrooms"};
+    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -255,12 +253,33 @@ void handle_client_command(int client_sockfd, char *command)
             send_message(client_sockfd, room_info);
         }
     }
+    else if (strncmp(command, commands[3], strlen(commands[3])) == 0)
+    {
+        int room_id, clients_count = 0;
+        char clients_list_title[BUFFER_SIZE], client_info[BUFFER_SIZE], total_clients[BUFFER_SIZE];
+
+        sscanf(command, "$listroomclients %d", &room_id);
+        snprintf(clients_list_title, BUFFER_SIZE, "\nCLIENTES DA SALA %d:\n\n", room_id);
+        send_message(client_sockfd, clients_list_title);
+
+        for (int i = 0; i < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; i++)
+        {
+            Client client = clients[i];
+            if (client.current_room == room_id)
+            {
+                clients_count += 1;
+                snprintf(client_info, BUFFER_SIZE, "ID: %d, Nome: %s\n", client.id, client.name);
+                send_message(client_sockfd, client_info);
+            }
+        }
+        snprintf(total_clients, BUFFER_SIZE, "Total: %d\n\n", clients_count);
+        send_message(client_sockfd, total_clients);
+    }
     else
     {
         printf("Unknown command.\n");
     }
 }
-
 void remove_client(int room, int client)
 {
     struct sockaddr_in client_address = clients[rooms[room].clients[client]].addr;
