@@ -338,7 +338,7 @@ void handle_client_message(int client_sockfd)
             {
                 for (int room = 0; room < MAX_ROOMS; room++)
                 {
-                    if (rooms[room].id = clients[idx].current_room)
+                    if (rooms[room].id == clients[idx].current_room)
                     {
 
                         char message[BUFFER_SIZE];
