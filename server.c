@@ -13,7 +13,7 @@
 #define MAX_CLIENT_CHAR_NAME 50
 #define MAX_ROOM_CHAR_NAME 50
 #define MAX_CLIENTS_PER_ROOM 10
-#define MAX_ROOMS 5
+#define MAX_ROOMS 10
 #define STDIN 0
 #define BUFFER_SIZE 256
 
@@ -39,7 +39,9 @@ typedef struct
 
 Room rooms[MAX_ROOMS];
 Client clients[MAX_ROOMS * MAX_CLIENTS_PER_ROOM];
-int sockfd, max_fd, newsockfd, bytes_received, opt = 1, clients_count = 0;
+int sockfd, max_fd, newsockfd, bytes_received, opt = 1;
+int clients_count = 0;
+int rooms_count = 0;
 fd_set master_fds;
 char buffer[BUFFER_SIZE];
 
@@ -47,12 +49,29 @@ void initialize_rooms()
 {
     for (int room = 0; room < MAX_ROOMS; room++)
     {
-        int room_id = room + 1;
-        rooms[room].id = room_id;
-        rooms[room].clients_count = 0;
-        snprintf(rooms[room].name, sizeof(rooms[room].name), "Sala %d", room_id);
+
+        if (room < 5)
+        {
+
+            int randomNum;
+
+            srand(time(NULL));
+
+            randomNum = rand();
+
+            int room_id = randomNum;
+            rooms[room].id = room_id;
+            rooms[room].clients_count = 0;
+            snprintf(rooms[room].name, sizeof(rooms[room].name), "Sala %d", room_id);
+            rooms_count++;
+        }
+        else
+        {
+            rooms[room].id = -1;
+        }
     }
 }
+
 int create_socket(const char *ip, int port)
 {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -206,7 +225,7 @@ void cmd_leave_room(int client_sockfd)
 
 void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients", "$lobby"};
+    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients", "$lobby", "$create"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -300,8 +319,11 @@ void handle_client_command(int client_sockfd, char *command)
 
         for (int room = 0; room < MAX_ROOMS; room++)
         {
-            snprintf(room_info, BUFFER_SIZE, "ID: %d, Nome: %s, Clientes: %d/%d\n", rooms[room].id, rooms[room].name, rooms[room].clients_count, MAX_CLIENTS_PER_ROOM);
-            send_message(client_sockfd, room_info);
+            if (rooms[room].id != -1)
+            {
+                snprintf(room_info, BUFFER_SIZE, "ID: %d, Nome: %s, Clientes: %d/%d\n", rooms[room].id, rooms[room].name, rooms[room].clients_count, MAX_CLIENTS_PER_ROOM);
+                send_message(client_sockfd, room_info);
+            }
         }
     }
     else if (strncmp(command, commands[3], strlen(commands[3])) == 0)
@@ -332,6 +354,44 @@ void handle_client_command(int client_sockfd, char *command)
         cmd_leave_room(client_sockfd);
 
         send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n\n");
+    }
+
+    else if (strncmp(command, commands[5], strlen(commands[5])) == 0)
+    {
+
+        char *prefixPosition = strstr(command, &commands[5][1]);
+
+        char *name = prefixPosition + strlen(commands[5]);
+
+        size_t length = strlen(name);
+
+        if (length >= 2)
+        {
+            size_t penultimateIndex = length - 2;
+            name[penultimateIndex] = '\0';
+        }
+
+        if (rooms_count < MAX_ROOMS)
+        {
+            for (int i = 0; i < MAX_ROOMS; i++)
+            {
+                if (rooms[i].id == -1)
+                {
+
+                    int randomNum;
+
+                    srand(time(NULL));
+
+                    randomNum = rand();
+
+                    rooms[i].id = randomNum;
+                    rooms[i].clients_count = 0;
+                    strcpy(rooms[i].name, name);
+
+                    break;
+                }
+            }
+        }
     }
     else
     {
