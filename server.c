@@ -173,6 +173,37 @@ void handle_stdin_input()
         send_message_to_room(room, buffer, -1);
     }
 }
+
+void cmd_leave_room(int client_sockfd)
+{
+    for (int client_idx = 0; client_idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; client_idx++)
+    {
+        if (clients[client_idx].client_sockfd == client_sockfd)
+        {
+            for (int room_idx = 0; room_idx < MAX_ROOMS; room_idx++)
+            {
+                if (rooms[room_idx].id == clients[client_idx].current_room)
+                {
+                    for (int i = 0; i < rooms[room_idx].clients_count; i++)
+                    {
+                        if (rooms[room_idx].clients[i] == client_sockfd)
+                        {
+                            rooms[room_idx].clients[i] = 0;
+                        }
+                    }
+
+                    rooms[room_idx].clients_count--;
+
+                    break;
+                }
+            }
+
+            clients[client_idx].current_room = -1;
+            break;
+        }
+    }
+}
+
 void handle_client_command(int client_sockfd, char *command)
 {
     char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients"};
@@ -220,20 +251,40 @@ void handle_client_command(int client_sockfd, char *command)
             if (strcmp(rooms[room].name, name) == 0)
             {
 
-                rooms[room].clients[rooms[room].clients_count] = client_sockfd;
-                rooms[room].clients_count++;
+                // rooms[room].clients[rooms[room].clients_count] = client_sockfd;
+                // rooms[room].clients_count++;
 
                 for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
                 {
+
                     if (clients[idx].client_sockfd == client_sockfd)
                     {
+
+                        if (clients[idx].current_room != -1)
+                        {
+                            cmd_leave_room(client_sockfd);
+                        }
+
                         clients[idx].current_room = rooms[room].id;
+
+                        for (int client_idx = 0; client_idx < MAX_CLIENTS_PER_ROOM; client_idx++)
+                        {
+
+                            if (rooms[room].clients[client_idx] == 0)
+                            {
+                                rooms[room].clients[client_idx] = client_sockfd;
+                                rooms[room].clients_count++;
+
+                                break;
+                            }
+                        }
+
                         break;
                     }
                 }
                 char welcome_message[BUFFER_SIZE];
                 snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", name);
-                send_message(newsockfd, welcome_message);
+                send_message(client_sockfd, welcome_message);
 
                 break;
             }
@@ -280,6 +331,7 @@ void handle_client_command(int client_sockfd, char *command)
         printf("Unknown command.\n");
     }
 }
+
 void remove_client(int room, int client)
 {
     struct sockaddr_in client_address = clients[rooms[room].clients[client]].addr;
