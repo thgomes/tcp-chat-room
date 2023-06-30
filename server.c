@@ -136,18 +136,8 @@ void handle_new_connection()
         max_fd = newsockfd;
     }
 
-    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $set_name <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$list para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n");
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n");
 }
-
-void join_room(int client_id, int room)
-{
-    rooms[room].clients[rooms[room].clients_count] = client_id;
-
-    char welcome_message[BUFFER_SIZE];
-    snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", rooms[room].name);
-    send_message(newsockfd, welcome_message);
-}
-
 void send_message_to_room(int room, const char *message, int this_client)
 {
     printf("\n");
@@ -187,7 +177,7 @@ void handle_stdin_input()
 
 void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$setname", "$join"};
+    char *commands[] = {"$setname", "$join", "$listrooms"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -249,6 +239,20 @@ void handle_client_command(int client_sockfd, char *command)
 
                 break;
             }
+        }
+    }
+    else if (strncmp(command, commands[2], strlen(commands[2])) == 0)
+    {
+        char rooms_list_title[BUFFER_SIZE];
+        char room_info[BUFFER_SIZE];
+
+        snprintf(rooms_list_title, BUFFER_SIZE, "\nSALAS:\n\n");
+        send_message(client_sockfd, rooms_list_title);
+
+        for (int room = 0; room < MAX_ROOMS; room++)
+        {
+            snprintf(room_info, BUFFER_SIZE, "ID: %d, Nome: %s, Clientes: %d/%d\n", rooms[room].id, rooms[room].name, rooms[room].clients_count, MAX_CLIENTS_PER_ROOM);
+            send_message(client_sockfd, room_info);
         }
     }
     else
