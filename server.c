@@ -39,9 +39,7 @@ typedef struct
 
 Room rooms[MAX_ROOMS];
 Client clients[MAX_ROOMS * MAX_CLIENTS_PER_ROOM];
-int clients_count = 0;
-
-int sockfd, max_fd, newsockfd, bytes_received, opt = 1;
+int sockfd, max_fd, newsockfd, bytes_received, opt = 1, clients_count = 0;
 fd_set master_fds;
 char buffer[BUFFER_SIZE];
 
@@ -97,9 +95,6 @@ int create_socket(const char *ip, int port)
 void send_message(int sockfd, const char *message)
 {
     send(sockfd, message, strlen(message), 0);
-    printf("\n");
-    printf("Enviando mensagem para o socket %d\n", sockfd);
-    printf("Mensagem: %s\n", message);
 }
 int find_available_room()
 {
@@ -173,13 +168,6 @@ void send_message_to_room(int room, const char *message, int this_client)
                 send_message(clients[idx].client_sockfd, message);
             }
         }
-
-        // int client_sockfd = clients[rooms[room].clients[client]].client_sockfd; // Acesso ao client_sockfd
-
-        // if (client_sockfd != this_client)
-        // {
-        //     send_message(client_sockfd, message);
-        // }
     }
 }
 void handle_stdin_input()
@@ -223,8 +211,6 @@ void handle_client_command(int client_sockfd, char *command)
                 break;
             }
         }
-
-        printf("Hello!\n");
     }
     else if (strncmp(command, commands[1], strlen(commands[1])) == 0)
     {
@@ -260,7 +246,6 @@ void handle_client_command(int client_sockfd, char *command)
                 char welcome_message[BUFFER_SIZE];
                 snprintf(welcome_message, BUFFER_SIZE, "Você entrou na sala %s.\n", name);
                 send_message(newsockfd, welcome_message);
-                printf("Hello!\n");
 
                 break;
             }
