@@ -147,7 +147,7 @@ void handle_new_connection()
         max_fd = newsockfd;
     }
 
-    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $delete <nome_da_sala> deleta a sala e manda os participantes pro lobby\n");
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $delete <nome_da_sala> deleta a sala e manda os participantes pro saguao\n");
 }
 void send_message_to_room(int room, const char *message, int this_client)
 {
@@ -214,8 +214,6 @@ void cmd_leave_room(int client_sockfd)
             break;
         }
     }
-
-    send_message(client_sockfd, "Voce saiu da sala e foi para o lobby\n");
 }
 
 void handle_client_command(int client_sockfd, char *command)
@@ -258,16 +256,13 @@ void handle_client_command(int client_sockfd, char *command)
             size_t penultimateIndex = length - 2;
             name[penultimateIndex] = '\0';
         }
+        short foundRoom = 0;
 
         for (int room = 0; room < MAX_ROOMS; room++)
         {
-
             if (strcmp(rooms[room].name, name) == 0)
             {
-
-                // rooms[room].clients[rooms[room].clients_count] = client_sockfd;
-                // rooms[room].clients_count++;
-
+                foundRoom = 1;
                 for (int idx = 0; idx < MAX_ROOMS * MAX_CLIENTS_PER_ROOM; idx++)
                 {
 
@@ -302,6 +297,11 @@ void handle_client_command(int client_sockfd, char *command)
 
                 break;
             }
+        }
+
+        if (foundRoom == 0)
+        {
+            send_message(client_sockfd, "Não há encontramos nenhuma sala com este nome.\n");
         }
     }
     else if (strncmp(command, commands[2], strlen(commands[2])) == 0)
@@ -348,7 +348,9 @@ void handle_client_command(int client_sockfd, char *command)
     {
         cmd_leave_room(client_sockfd);
 
-        send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $create <nome_da_sala> para criar uma sala.\n $lobby para sair da sala e voltar ao lobby.\n");
+        send_message(client_sockfd, "Voce saiu da sala e foi para o saguao\n");
+
+        send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n$create <nome_da_sala> para criar uma sala.\n$lobby para sair da sala e voltar ao saguao.\n");
     }
 
     else if (strncmp(command, commands[5], strlen(commands[5])) == 0)
@@ -415,6 +417,7 @@ void handle_client_command(int client_sockfd, char *command)
                 for (int j = 0; j++; j < rooms[i].clients_count)
                 {
                     cmd_leave_room(rooms[i].clients[j]);
+                    send_message(client_sockfd, "Voce foi movido para o saguao pois sua sala foi deletada.\n");
                 }
 
                 /*Excluindo a sala em si*/
