@@ -214,6 +214,8 @@ void cmd_leave_room(int client_sockfd)
             break;
         }
     }
+
+    send_message(client_sockfd, "Voce saiu da sala e foi para o lobby\n");
 }
 
 void handle_client_command(int client_sockfd, char *command)
@@ -376,13 +378,15 @@ void handle_client_command(int client_sockfd, char *command)
                     return;
                 }
 
-                if (empty_index != -1 && rooms[i].id == -1)
+                if (rooms[i].id == -1)
                 {
                     empty_index = i;
                 }
             }
         }
 
+        printf("index %d", empty_index);
+        fflush(stdout);
         int randomNum;
 
         srand(time(NULL));
@@ -392,14 +396,33 @@ void handle_client_command(int client_sockfd, char *command)
         rooms[empty_index].id = randomNum;
         rooms[empty_index].clients_count = 0;
         strcpy(rooms[empty_index].name, name);
+        memset(rooms[empty_index].clients, 0, sizeof(rooms[empty_index].clients));
     }
     else if (strncmp(command, commands[6], strlen(commands[6])) == 0)
     {
-        char *prefixPosition = strstr(command, &commands[5][1]);
+        char *prefixPosition = strstr(command, &commands[6][1]);
 
-        char *name = prefixPosition + strlen(commands[5]);
+        char *name = prefixPosition + strlen(commands[6]);
 
         size_t length = strlen(name);
+        for (int i = 0; i < MAX_ROOMS; i++)
+        {
+
+            if ((strncmp(rooms[i].name, name, strlen(name)) == 0))
+            {
+                /* Removendo todos os clientes da sala que será
+                deletada .*/
+                for (int j = 0; j++; j < rooms[i].clients_count)
+                {
+                    cmd_leave_room(rooms[i].clients[j]);
+                }
+
+                /*Excluindo a sala em si*/
+                rooms[i].id = -1;
+                rooms[i].clients_count = 0;
+                memset(rooms[i].clients, 0, sizeof(rooms[i].clients));
+            }
+        }
     }
     else
     {
