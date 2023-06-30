@@ -41,3 +41,12 @@ Este projeto consiste em uma aplicação de salas de bate-papo virtuais implemen
 Agora você pode interagir com o cliente e o servidor por meio dos comandos implementados no código-fonte. Também é possível se comunicar com o servidor por meio do Telnet.
 
 
+## Comandos Disponíveis
+Abaixo estão os comandos disponíveis para interagir com a aplicação:
+
+- `setname <nome>`: Escolhe um nome para o cliente.
+- `join <nome_da_sala>`: Entra em uma sala existente.
+- `listrooms`: Lista as salas disponíveis.
+- `create <nome_da_sala>`: Cria uma nova sala.
+- `listroomclients <id_da_sala>`: Lista os clientes presentes em uma sala.
+- `delete <nome_da_sala>`: Deleta uma sala e move os participantes para o saguão.
