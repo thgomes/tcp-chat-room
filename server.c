@@ -353,7 +353,7 @@ void handle_client_command(int client_sockfd, char *command)
     {
         cmd_leave_room(client_sockfd);
 
-        send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n\n");
+        send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $create <nome_da_sala> para criar uma sala.\n $lobby para sair da sala e voltar ao lobby.\n");
     }
 
     else if (strncmp(command, commands[5], strlen(commands[5])) == 0)
