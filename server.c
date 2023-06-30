@@ -206,7 +206,7 @@ void cmd_leave_room(int client_sockfd)
 
 void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients"};
+    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients", "$lobby"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -325,6 +325,13 @@ void handle_client_command(int client_sockfd, char *command)
         }
         snprintf(total_clients, BUFFER_SIZE, "Total: %d\n\n", clients_count);
         send_message(client_sockfd, total_clients);
+    }
+
+    else if (strncmp(command, commands[4], strlen(commands[4])) == 0)
+    {
+        cmd_leave_room(client_sockfd);
+
+        send_message(client_sockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n\n");
     }
     else
     {
