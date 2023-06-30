@@ -52,14 +52,7 @@ void initialize_rooms()
 
         if (room < 5)
         {
-
-            int randomNum;
-
-            srand(time(NULL));
-
-            randomNum = rand();
-
-            int room_id = randomNum;
+            int room_id = room + 1;
             rooms[room].id = room_id;
             rooms[room].clients_count = 0;
             snprintf(rooms[room].name, sizeof(rooms[room].name), "Sala %d", room_id);
@@ -154,7 +147,7 @@ void handle_new_connection()
         max_fd = newsockfd;
     }
 
-    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n\n");
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $delete <nome_da_sala> deleta a sala e manda os participantes pro lobby\n");
 }
 void send_message_to_room(int room, const char *message, int this_client)
 {
@@ -225,7 +218,7 @@ void cmd_leave_room(int client_sockfd)
 
 void handle_client_command(int client_sockfd, char *command)
 {
-    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients", "$lobby", "$create"};
+    char *commands[] = {"$setname", "$join", "$listrooms", "$listroomclients", "$lobby", "$create", "$delete"};
 
     if (strncmp(command, commands[0], strlen(commands[0])) == 0)
     {
@@ -371,27 +364,42 @@ void handle_client_command(int client_sockfd, char *command)
             name[penultimateIndex] = '\0';
         }
 
+        int empty_index = -1;
         if (rooms_count < MAX_ROOMS)
         {
             for (int i = 0; i < MAX_ROOMS; i++)
             {
-                if (rooms[i].id == -1)
+
+                if ((strncmp(rooms[i].name, name, strlen(name)) == 0))
                 {
+                    send_message(client_sockfd, "Já existe uma sala com esse nome!\n");
+                    return;
+                }
 
-                    int randomNum;
-
-                    srand(time(NULL));
-
-                    randomNum = rand();
-
-                    rooms[i].id = randomNum;
-                    rooms[i].clients_count = 0;
-                    strcpy(rooms[i].name, name);
-
-                    break;
+                if (empty_index != -1 && rooms[i].id == -1)
+                {
+                    empty_index = i;
                 }
             }
         }
+
+        int randomNum;
+
+        srand(time(NULL));
+
+        randomNum = rand();
+
+        rooms[empty_index].id = randomNum;
+        rooms[empty_index].clients_count = 0;
+        strcpy(rooms[empty_index].name, name);
+    }
+    else if (strncmp(command, commands[6], strlen(commands[6])) == 0)
+    {
+        char *prefixPosition = strstr(command, &commands[5][1]);
+
+        char *name = prefixPosition + strlen(commands[5]);
+
+        size_t length = strlen(name);
     }
     else
     {
