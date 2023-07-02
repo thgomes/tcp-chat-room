@@ -407,6 +407,13 @@ void handle_client_command(int client_sockfd, char *command)
         char *name = prefixPosition + strlen(commands[6]);
 
         size_t length = strlen(name);
+
+        if (length >= 2)
+        {
+            size_t penultimateIndex = length - 2;
+            name[penultimateIndex] = '\0';
+        }
+
         for (int i = 0; i < MAX_ROOMS; i++)
         {
 
@@ -417,7 +424,7 @@ void handle_client_command(int client_sockfd, char *command)
                 for (int j = 0; j++; j < rooms[i].clients_count)
                 {
                     cmd_leave_room(rooms[i].clients[j]);
-                    send_message(client_sockfd, "Voce foi movido para o saguao pois sua sala foi deletada.\n");
+                    // send_message(rooms[i].clients[j], "Voce foi movido para o saguao pois sua sala foi deletada.\n\0");
                 }
 
                 /*Excluindo a sala em si*/
