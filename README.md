@@ -50,3 +50,4 @@ Abaixo estão os comandos disponíveis para interagir com a aplicação:
 - `create <nome_da_sala>`: Cria uma nova sala.
 - `listroomclients <id_da_sala>`: Lista os clientes presentes em uma sala.
 - `delete <nome_da_sala>`: Deleta uma sala e move os participantes para o saguão.
+- `lobby`: Sai de uma sala e vai para o saguão.
