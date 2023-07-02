@@ -86,19 +86,19 @@ int main(int argc, char *argv[])
                 perror("Erro ao ler entrada");
                 break;
             }
-
             size_t len = strlen(message);
             if (len > 0 && message[len - 1] == '\n')
             {
-                message[len - 1] = '\0'; // Remover o caractere de nova linha
+                message[len - 1] = '\0';
             }
-
+            len = strlen(message);
+            strcat(message, "\r\n");
+            len += 2;
             if (send(sockfd, message, strlen(message), 0) == -1)
             {
                 perror("Erro ao enviar mensagem para o servidor");
                 break;
             }
-
             set_color(COLOR_CYAN);
             printf("Você: %s\n", message);
             reset_color();

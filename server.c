@@ -476,7 +476,7 @@ void handle_client_message(int client_sockfd)
     else
     {
         buffer[bytes_received] = '\0'; // Adicione isso para garantir que a string seja terminada corretamente
-        printf("/n");
+        printf("\n");
         printf("Cliente (socket %d): %s\n", client_sockfd, buffer);
 
         if (buffer[0] == '$')
