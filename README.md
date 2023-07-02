@@ -29,13 +29,13 @@ Este projeto consiste em uma aplicação de salas de bate-papo virtuais implemen
 4. Execute o servidor:
    
    ```shell
-   ./server
+   ./server <ip> <porta>
    ```
 
 5. Em outro terminal, execute o cliente:
    
    ```shell
-   ./client
+   ./client <ip> <porta>
    ```
 
 Agora você pode interagir com o cliente e o servidor por meio dos comandos implementados no código-fonte. Também é possível se comunicar com o servidor por meio do Telnet.
