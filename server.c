@@ -147,7 +147,7 @@ void handle_new_connection()
         max_fd = newsockfd;
     }
 
-    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n $setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n $delete <nome_da_sala> deleta a sala e manda os participantes pro saguao\n");
+    send_message(newsockfd, "Bem vindo(a), voce esta no saguao.\n-----LISTA DE COMANDOS-----.\n$setname <nome> para escolher um nome.\n$join <nome_da_sala> para entrar numa sala.\n$listrooms para listar salas existentes.\n$create <nome_da_sala> para criar uma sala.\n$listroomclients <id_da_sala> para listar clientes de uma sala.\n$delete <nome_da_sala> deleta a sala e manda os participantes pro saguao\n$lobby Te faz sair da sala e voltar para o saguao.\n");
 }
 void send_message_to_room(int room, const char *message, int this_client)
 {
