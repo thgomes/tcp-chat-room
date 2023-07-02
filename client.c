@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
                 perror("Erro ao receber mensagem do servidor");
                 break;
             }
+            fflush(stdout);
         }
     }
 
